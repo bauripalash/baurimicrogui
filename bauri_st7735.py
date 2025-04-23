@@ -46,20 +46,33 @@ ROT_90 = 0x60
 ROT_180 = 0xC0
 ROT_270 = 0xA0
 
-DISP_RGB = 0x00
+COL_BGR = 0x08
+COL_RGB = 0x00
 
-def DispColor(r : int, g : int, b : int):
-    r = (r >> 3) & 0x1F
-    g = (g >> 2) & 0x3F 
-    b = (b >> 3) & 0x1F
 
-    return (r << 11) | (g << 5) | b
+def DispColor(r: int, g: int, b: int):
+    return ((r >> 3) << 11) | ((g >> 2) << 5) | (b >> 3)
+
 
 COLOR_BLACK = 0
 COLOR_WHITE = DispColor(255, 255, 255)
-COLOR_GREEN = DispColor(0x00, 0xFF, 0x00)
+COLOR_RED = DispColor(255, 0, 0)
+COLOR_GREEN = DispColor(0, 255, 0)
+COLOR_BLUE = DispColor(0, 0, 255)
 
-class BauriST7735():
+
+def clamp_cord(pos: int, smallest: int, biggest: int) -> int:
+    """Clamp a giver number within `smallest` and `biggest` and return it"""
+
+    if pos < smallest:
+        return smallest
+    elif pos > biggest:
+        return biggest
+    else:
+        return pos
+
+
+class BauriST7735:
     dc_pin: Pin
     reset_pin: Pin | None = None
     cs_pin: Pin | None = None
@@ -67,6 +80,10 @@ class BauriST7735():
     height: int
     width: int
     rotation: int
+    colormode: int
+    colordata: bytearray
+    color_buf: bytes
+    buf: framebuf.FrameBuffer
 
     def __init__(
         self,
@@ -77,12 +94,14 @@ class BauriST7735():
         p_cs: int | Pin | None,
         width: int = 128,
         height: int = 160,
-        rotation: int = ROT_180,
+        rotation: int = ROT_0,
+        colormode: int = COL_RGB,
     ) -> None:
         self.spi = spi
         self.width = width
         self.height = height
         self.rotation = rotation
+        self.colormode = colormode
 
         if isinstance(p_dc, Pin):
             self.dc_pin = p_dc
@@ -108,16 +127,19 @@ class BauriST7735():
             else:
                 print("Invalid CS Pin Type")
 
-        #self.fb_mode = framebuf.GS8
-        #buff = bytearray(height * width)
-        #self.mv_buff = memoryview(buff)
-        #super().__init__(buff, self.height, self.width, self.fb_mode)
-        
+        # self.fb_mode = framebuf.GS8
+        # buff = bytearray(height * width)
+        # self.mv_buff = memoryview(buff)
+        # super().__init__(buff, self.height, self.width, self.fb_mode)
+        self.fb_mode = framebuf.RGB565
+        self.raw_buf = bytearray(self.width * self.height * 2)
+        self.buf = framebuf.FrameBuffer(
+            self.raw_buf, self.width, self.height, self.fb_mode
+        )
 
+        self.colordata = bytearray(2)
 
-
-
-        #self.init_display()
+        # self.init_display()
 
     def _dc(self, value: int) -> None:
         """Send `value` to DC/AO Pin"""
@@ -151,7 +173,8 @@ class BauriST7735():
         self.spi.write(bytearray([cmd]))
         self._cs(1)
 
-    def _wdata(self, data : bytearray) -> None:
+    def _wdata(self, data: bytearray) -> None:
+        """Write raw data to the device"""
         self._dc(1)
         self._cs(0)
         self.spi.write(data)
@@ -162,19 +185,20 @@ class BauriST7735():
         self._cmd(cmd)
         self._wdata(data)
 
-
     def disp_on(self) -> None:
+        """Turn on display"""
         self._cmd(DISPON)
 
     def disp_off(self) -> None:
+        """Turn off display"""
         self._cmd(DISPOFF)
 
-    def disp_invert(self, iv : bool) -> None:
+    def disp_invert(self, iv: bool) -> None:
+        """Toggle invert. True -> Invert."""
         if iv:
             self._cmd(INVON)
         else:
             self._cmd(INVOFF)
-
 
     def init_display(self) -> None:
         self._hardw_reset()  # Hardware Reset
@@ -239,105 +263,125 @@ class BauriST7735():
         self._cmd(INVOFF)
 
         ## Offset RGB Stuff here
-
         self.offset = (2, 1)
 
         ## Rotation Stuff
-        self._argcmd(MADCTL, bytearray([self.rotation | DISP_RGB]))
+        # self._argcmd(MADCTL, bytearray([self.rotation | DISP_RGB]))
+        # self._argcmd(MADCTL, bytearray([0x05]))
+        self._set_rotation()
 
         self._argcmd(COLMOD, bytearray([0x05]))
 
+        # Gamma Control - Positive polarity
         self._argcmd(
-            CASET,
+            GMCTRP_1,
             bytearray(
-                [0x00, self.offset[0], 0x00, self.width + self.offset[0]]
+                [
+                    0x02,
+                    0x1C,
+                    0x07,
+                    0x12,
+                    0x37,
+                    0x32,
+                    0x29,
+                    0x2D,
+                    0x29,
+                    0x25,
+                    0x2B,
+                    0x39,
+                    0x00,
+                    0x01,
+                    0x03,
+                    0x10,
+                ]
             ),
         )
 
-        self._argcmd(
-            RASET,
-            bytearray([0x00, self.offset[1], self.height + self.offset[1]]),
-        )
-
-
-        # Gamma Control - Positive polarity
-        self._argcmd(GMCTRP_1, bytearray([0x02, 0x1c, 0x07, 0x12, 0x37, 0x32, 0x29, 0x2d, 0x29,
-                                0x25, 0x2b, 0x39, 0x00, 0x01, 0x03, 0x10]))
-
-
         # Gamma Control - Negative polarity
-        self._argcmd(GMCTRN_1, bytearray([0x03, 0x1d, 0x07, 0x06, 0x2e, 0x2c, 0x29, 0x2d, 0x2e,
-                                0x2e, 0x37, 0x3f, 0x00, 0x00, 0x02, 0x10]))
+        self._argcmd(
+            GMCTRN_1,
+            bytearray(
+                [
+                    0x03,
+                    0x1D,
+                    0x07,
+                    0x06,
+                    0x2E,
+                    0x2C,
+                    0x29,
+                    0x2D,
+                    0x2E,
+                    0x2E,
+                    0x37,
+                    0x3F,
+                    0x00,
+                    0x00,
+                    0x02,
+                    0x10,
+                ]
+            ),
+        )
 
         self._cmd(NORON)
         time.sleep_us(10)
         self._cmd(DISPON)
         time.sleep_us(100)
 
-
         self._cs(1)
 
-    def _push_color(self, color : int):
-        colordata = bytearray()
-        colordata.append(color >> 8)
-        colordata.append(color)
-        #print(colordata)
-        self._wdata(colordata)
+        self._set_rotation()
 
-    def _set_color(self, color : int):
-        colordata = bytearray()
-        colordata.append(color >> 8)
-        colordata.append(color)
-        # ?? buff ?? 
-        self.buf = bytes(colordata) * 32
-        self.colordata = colordata
+    def _set_rotation(self) -> None:
+        if self.rotation == ROT_90 or self.rotation == ROT_270:
+            _h = self.height
+            _w = self.width
+            self.width = _h
+            self.height = _w
+        self._argcmd(MADCTL, bytearray([self.rotation | self.colormode]))
 
-    def _draw(self , numPixels : int):
+    def _populate_colordata(self, color: int):
+        self.colordata[0] = color >> 8
+        self.colordata[1] = color
+
+    def _push_color(self, color: int):
+        # self.colordata[0] = color >> 8
+        # self.colordata[1] = color
+        self._populate_colordata(color)
+        self._wdata(self.colordata)
+
+    def _set_color(self, color: int):
+        # colordata = bytearray()
+        # colordata.append(color >> 8)
+        # colordata.append(color)
+        self._populate_colordata(color)
+        self.color_buf = bytes(self.colordata) * 32
+        print(self.color_buf)
+
+    def _draw(self, numPixels: int):
         self._dc(1)
         self._cs(0)
 
-        for i in range(numPixels // 32):
-            self.spi.write(self.buf)
-        rest = (int(numPixels) % 32)
-        if rest>0:
+        for _ in range(numPixels // 32):
+            self.spi.write(self.color_buf)
+        rest = int(numPixels) % 32
+        if rest > 0:
             b = bytes(self.colordata) * rest
             self.spi.write(b)
         self._cs(1)
 
-    def fill_rect(self, pos_x : int , pos_y : int, width : int, height : int , color : int) -> None:
-        x1 = pos_x
-        y1 = pos_y
-        x2 = pos_x + width
-        y2 = pos_y + height
+    def fill_rect(
+        self, pos_x: int, pos_y: int, width: int, height: int, color: int
+    ) -> None:
+        x1 = clamp_cord(pos_x, 0, self.width)
+        y1 = clamp_cord(pos_y, 0, self.height)
+        x2 = clamp_cord(pos_x + width, 0, self.width)
+        y2 = clamp_cord(pos_y + height, 0, self.height)
 
-        if x1 < 0:
-            x1 = 0
-        elif x1 > self.width:
-            x1 = self.width
-
-        if x2 < 0:
-            x2 = 0 
-        elif x2 > self.width:
-            x2 = self.width
-
-        if y1 < 0:
-            y1 = 0
-        elif y1 > self.height:
-            y1 = self.height
-
-        if y2 < 0:
-            y2 = 0
-        elif y2 > self.height:
-            y2 = self.height
-
-        self._set_win(x1, y1, abs(x2 - pos_x) , abs(y2 - pos_y))
+        self._set_win(x1, y1, abs(x2 - pos_x), abs(y2 - pos_y))
         self._set_color(color)
         self._draw((x2 - x1 + 1) * (y2 - y1 + 1))
 
-
-
-
-    def _set_win(self, pos_x : int, pos_y : int, width : int, height : int) -> None:
+    def _set_win(self, pos_x: int, pos_y: int, width: int, height: int) -> None:
         x = pos_x + self.offset[0]
         y = pos_y + self.offset[1]
         data = bytearray([self.offset[0], x, self.offset[0], x + width])
@@ -346,46 +390,77 @@ class BauriST7735():
         self._argcmd(RASET, data)
         self._cmd(RAMWR)
 
-
-
-    def _pixel(self, pos_x : int, pos_y : int, color : int) -> None:
+    def _pixel(self, pos_x: int, pos_y: int, color: int) -> None:
         self._set_win(pos_x, pos_y, 1, 1)
         self._push_color(color)
 
+    def _get_swapper_buf(self) -> bytearray:
+        buf = bytearray(len(self.raw_buf))
+        for i in range(0, len(self.raw_buf), 2):
+            buf[i] = self.raw_buf[i + 1]
+            buf[i + 1] = self.raw_buf[i]
 
+        return buf
 
-    def disp(self) -> None:
-        pass
+    def disp(self, flip_endianness: bool = False) -> None:
+        self._set_win(0, 0, self.width - 1, self.height - 1)
+        self._dc(1)
+        self._cs(0)
+        # I am not sure if this issue specific to my display unit. But without
+        # flipping endinanness. colors are all messed up.
+        # Don't pass any argument if you see colors correctly without flipping.
+        if flip_endianness:
+            self.spi.write(self._get_swapper_buf())
+        else:
+            self.spi.write(self.raw_buf)
+        self._cs(1)
 
 
 if __name__ == "__main__":
     print("SPI init ->")
-    s = SPI(1, baudrate=8000000, polarity=0, phase=0, sck=Pin(18), mosi=Pin(23), miso=None)
-    tft = BauriST7735(spi=s, p_dc=32, p_reset=None, p_cs=5, width=128, height=160)
+    s = SPI(
+        1,
+        baudrate=8000000,
+        polarity=0,
+        phase=0,
+        sck=Pin(18),
+        mosi=Pin(23),
+        miso=None,
+    )
+    tft = BauriST7735(
+        spi=s,
+        p_dc=32,
+        p_reset=None,
+        p_cs=5,
+        width=128,
+        height=160,
+        rotation=ROT_180,
+    )
     tft.init_display()
-    #print(COLOR_WHITE)
     tft.disp_off()
     tft.disp_on()
-    #tft.fill(COLOR_GREEN)
-     
-    #print(tft.buff)
-    #tft.fill(COLOR_WHITE)
-    #print(tft.buff)
-    #tft.rect(20, 20, 10, 10 , COLOR_BLACK)
-    #print(tft.mv_buff)
-    for i in range(50):
-        tft._pixel(40 + i , 159 , COLOR_WHITE)
 
-    tft.fill_rect(0,0, tft.width, tft.height, COLOR_BLACK)
+    raw_draw_run = False
+    # Raw Drawing
+    if raw_draw_run:
+        for i in range(50):
+            tft._pixel(40 + i, 159, COLOR_WHITE)
 
+        tft.fill_rect(0, 0, tft.width, tft.height, COLOR_BLACK)
 
-    tft.fill_rect(20,20, 20, 20, COLOR_GREEN)
+        tft.fill_rect(20, 20, 20, 20, COLOR_GREEN)
 
-    tft.fill_rect(50,20, 20, 20, COLOR_GREEN)
+        tft.fill_rect(50, 20, 20, 20, COLOR_GREEN)
 
-    tft.fill_rect(20, 50, 50, 10, COLOR_WHITE)
-
-    
-    tft.disp()
-    
-    
+        tft.fill_rect(20, 50, 50, 10, COLOR_WHITE)
+    # End Raw Drawing
+    else:
+        tft.buf.fill(COLOR_BLACK)
+        print("GREEN ->", hex(COLOR_GREEN))
+        tft.buf.fill_rect(20, 20, 20, 20, COLOR_GREEN)
+        tft.buf.fill_rect(50, 20, 20, 20, COLOR_GREEN)
+        tft.buf.fill_rect(20, 50, 50, 10, COLOR_WHITE)
+        # tft.buf.line(0,0, tft.width, tft.height, COLOR_BLUE)
+        # tft.buf.line(tft.width,0, 0, tft.height, COLOR_BLUE)
+        tft.buf.text("Hello World! this is very fun", 80, 20, COLOR_WHITE)
+        tft.disp(True)
