@@ -6,7 +6,6 @@ import framebuf
 import micropython
 
 
-
 # Rotation -> 0, 90, 180, 270 (Clockwise)
 ROT_0 = 0x00
 ROT_90 = 0x60
@@ -39,7 +38,6 @@ def clamp_cord(pos: int, smallest: int, biggest: int) -> int:
         return pos
 
 
-
 class BauriDispDriver:
     def __init__(self) -> None:
         pass
@@ -57,7 +55,8 @@ class BauriDispDriver:
     ) -> bool:
         self.spi = spi
         self.width = width
-        self.height = rotation
+        self.height = height
+        self.rotation = rotation
         self.colormode = colormode
 
         if isinstance(pin_dc, Pin):
@@ -427,8 +426,9 @@ class BauriST7735(BauriDispDriver):
             self.spi.write(buffer)
         self.cs(1)
 
+
 class BauriSimpleUI:
-    driver : BauriDispDriver
+    driver: BauriDispDriver
     width: int
     height: int
     fb_mode: int
@@ -436,10 +436,14 @@ class BauriSimpleUI:
     buf: framebuf.FrameBuffer
     rotation: int
     colormode: int
-    
 
     def __init__(
-        self, driver : BauriDispDriver, width: int, height: int, rotation: int, colormode: int
+        self,
+        driver: BauriDispDriver,
+        width: int,
+        height: int,
+        rotation: int,
+        colormode: int,
     ) -> None:
         self.driver = driver
         self.width = width
@@ -455,8 +459,6 @@ class BauriSimpleUI:
 
         self.driver.boot_display()
 
-
-
     def pixel(self, pos_x: int, pos_y: int) -> None:
         pass
 
@@ -467,11 +469,27 @@ class BauriSimpleUI:
         width: int,
         height: int,
         color: int,
+        thickness: int = 1,
         fill: bool = False,
         fill_color: int | None = None,
         clamp: bool = False,
     ) -> None:
-        pass
+
+        if fill:
+            fill_col = color
+            if fill_color is not None:
+                fill_col = fill_color
+            self.buf.fill_rect(pos_x, pos_y, width, height, fill_col)
+
+        if thickness > 1:
+            for i in range(thickness):
+                self.buf.rect(
+                    pos_x + i, pos_y + i, width - i * 2, height - i * 2, color
+                )
+        elif thickness < 1:
+            return
+        else:
+            self.buf.rect(pos_x, pos_y, width, height, color)
 
     def draw_circle(
         self,
@@ -479,10 +497,26 @@ class BauriSimpleUI:
         pos_y: int,
         r: int,
         color: int,
+        thickness: int = 1,
         fill: bool = False,
         fill_color: int | None = None,
     ) -> None:
-        pass
+
+        if thickness > 1:
+            for i in range(thickness):
+                self.buf.ellipse(pos_x, pos_y, r - i, r - i, color, False)
+        elif thickness < 1:
+            return
+        else:
+            self.buf.ellipse(pos_x, pos_y, r, r, color, False)
+
+        if fill:
+            fill_col = color
+            if fill_color is not None:
+                fill_col = fill_color
+            self.buf.ellipse(
+                pos_x, pos_y, r - thickness, r - thickness, fill_col, True
+            )
 
     def draw_ellipse(
         self,
@@ -491,6 +525,7 @@ class BauriSimpleUI:
         r_x: int,
         r_y: int,
         color: int,
+        thickness: int = 1,
         fill: bool = False,
         fill_color: int | None = None,
     ) -> None:
@@ -506,6 +541,8 @@ class BauriSimpleUI:
     ) -> None:
         pass
 
+    def show(self) -> None:
+        self.driver.display(self.raw_buf, True)
 
 
 if __name__ == "__main__":
@@ -529,13 +566,21 @@ if __name__ == "__main__":
         rotation=ROT_180,
     )
 
-
     ui = BauriSimpleUI(tft, 128, 160, ROT_180, COL_RGB)
+    ui.buf.fill(COLOR_BLACK)
+    # ui.buf.fill_rect(20, 20, 20, 20, COLOR_GREEN)
+    # ui.draw_rect(20, 20, 100, 100, COLOR_GREEN, thickness=10, fill=True, fill_color=COLOR_BLUE)
+    ui.draw_circle(
+        ui.width // 2,
+        ui.height // 2,
+        50,
+        COLOR_GREEN,
+        thickness=10,
+        fill=True,
+        fill_color=COLOR_BLUE,
+    )
 
-
-    # tft.fill(COLOR_BLACK)
-    # tft.fill_rect(20, 20, 20, 20, COLOR_GREEN)
-    # tft.fill_rect(50, 20, 20, 20, COLOR_GREEN)
-    # tft.fill_rect(20, 50, 50, 10, COLOR_WHITE)
-    # tft.text("Hello World! this is very fun", 80, 20, COLOR_WHITE)
-    # tft.display(True)
+    # ui.buf.fill_rect(50, 20, 20, 20, COLOR_GREEN)
+    # ui.buf.fill_rect(20, 50, 50, 10, COLOR_WHITE)
+    # ui.buf.text("Hello World! this is very fun", 80, 20, COLOR_WHITE)
+    ui.show()
