@@ -71,8 +71,10 @@ def clamp_cord(pos: int, smallest: int, biggest: int) -> int:
     else:
         return pos
 
+class BauriDispDriver(framebuf.FrameBuffer):
+    pass
 
-class BauriST7735:
+class BauriST7735(framebuf.FrameBuffer):
     dc_pin: Pin
     reset_pin: Pin | None = None
     cs_pin: Pin | None = None
@@ -83,7 +85,7 @@ class BauriST7735:
     colormode: int
     colordata: bytearray
     color_buf: bytes
-    buf: framebuf.FrameBuffer
+    
 
     def __init__(
         self,
@@ -133,9 +135,10 @@ class BauriST7735:
         # super().__init__(buff, self.height, self.width, self.fb_mode)
         self.fb_mode = framebuf.RGB565
         self.raw_buf = bytearray(self.width * self.height * 2)
-        self.buf = framebuf.FrameBuffer(
-            self.raw_buf, self.width, self.height, self.fb_mode
-        )
+        #self.buf = framebuf.FrameBuffer(
+        #    self.raw_buf, self.width, self.height, self.fb_mode
+        #)
+        super().__init__(self.raw_buf, self.width, self.height, self.fb_mode)
 
         self.colordata = bytearray(2)
 
@@ -355,7 +358,7 @@ class BauriST7735:
         # colordata.append(color)
         self._populate_colordata(color)
         self.color_buf = bytes(self.colordata) * 32
-        print(self.color_buf)
+        #print(self.color_buf)
 
     def _draw(self, numPixels: int):
         self._dc(1)
@@ -369,7 +372,7 @@ class BauriST7735:
             self.spi.write(b)
         self._cs(1)
 
-    def fill_rect(
+    def raw_fill_rect(
         self, pos_x: int, pos_y: int, width: int, height: int, color: int
     ) -> None:
         x1 = clamp_cord(pos_x, 0, self.width)
@@ -416,8 +419,11 @@ class BauriST7735:
         self._cs(1)
 
 
+    
+
+
 if __name__ == "__main__":
-    print("SPI init ->")
+    #print("SPI init ->")
     s = SPI(
         1,
         baudrate=8000000,
@@ -455,12 +461,12 @@ if __name__ == "__main__":
         tft.fill_rect(20, 50, 50, 10, COLOR_WHITE)
     # End Raw Drawing
     else:
-        tft.buf.fill(COLOR_BLACK)
-        print("GREEN ->", hex(COLOR_GREEN))
-        tft.buf.fill_rect(20, 20, 20, 20, COLOR_GREEN)
-        tft.buf.fill_rect(50, 20, 20, 20, COLOR_GREEN)
-        tft.buf.fill_rect(20, 50, 50, 10, COLOR_WHITE)
+        tft.fill(COLOR_BLACK)
+        #print("GREEN ->", hex(COLOR_GREEN))
+        tft.fill_rect(20, 20, 20, 20, COLOR_GREEN)
+        tft.fill_rect(50, 20, 20, 20, COLOR_GREEN)
+        tft.fill_rect(20, 50, 50, 10, COLOR_WHITE)
         # tft.buf.line(0,0, tft.width, tft.height, COLOR_BLUE)
         # tft.buf.line(tft.width,0, 0, tft.height, COLOR_BLUE)
-        tft.buf.text("Hello World! this is very fun", 80, 20, COLOR_WHITE)
+        tft.text("Hello World! this is very fun", 80, 20, COLOR_WHITE)
         tft.disp(True)
