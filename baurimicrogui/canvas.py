@@ -40,6 +40,7 @@ class BauriMicroCanvas:
         self.buf = framebuf.FrameBuffer(
             self.raw_buf, self.width, self.height, self.fb_mode
         )
+        self.mv = memoryview(self.raw_buf)
 
         self.char_width = 8
         self.char_height = 8
@@ -196,5 +197,5 @@ class BauriMicroCanvas:
         else:
             self.buf.text(text, pos_x, pos_y, color)
 
-    def show(self, flip_endianness: bool) -> None:
-        self.driver.display(self.raw_buf, flip_endianness)
+    def show(self) -> None:
+        self.driver.display(self.mv)

@@ -4,7 +4,7 @@ import micropython
 from baurimicrogui.drivers.input import BauriMicroInputDriver
 
 
-class JoyStick(BauriMicroInputDriver):
+class SimpleJoyStick(BauriMicroInputDriver):
     x_center_pos: int = 0
     y_center_pos: int = 0
     x_value: float = 0.0
@@ -191,10 +191,10 @@ class JoyStick(BauriMicroInputDriver):
 
         if self.current_state != self.prev_state:
             if self.prev_state != self.S_IDLE:
-                print("RELEASED -> ", self.state_to_str(self.prev_state))
+                #print("RELEASED -> ", self.state_to_str(self.prev_state))
                 self._call_fn(self.prev_state, True)
             if self.current_state != self.S_IDLE:
-                print("PRESSED -> ", self.state_to_str())
+                #print("PRESSED -> ", self.state_to_str())
                 self._call_fn(self.current_state, False)
         self.prev_state = self.current_state
 

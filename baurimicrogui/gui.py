@@ -5,6 +5,9 @@ from baurimicrogui.widgets import BauriMicroWidget
 from baurimicrogui.drivers.display import BauriMicroDispDriver
 from baurimicrogui.widgets.button import Button
 
+import gc
+
+
 
 class BauriMicroGUI:
     canvas: BauriMicroCanvas
@@ -28,21 +31,25 @@ class BauriMicroGUI:
         self.canvas = BauriMicroCanvas(
             driver, width, height, rotation, colormode
         )
+        gc.enable()
+        gc.collect()
+
         self.widgets = []
         self.windex = -1
+        
 
     def get_current_widget(
         self, fwd: bool = False, back: bool = False
     ) -> BauriMicroWidget:
         if fwd:
             self.windex += 1
-            self.windex = clamp_cord(self.windex, 0, self.num_widgets)
+            self.windex = clamp_cord(self.windex, 0, self.num_widgets - 1)
 
         if back:
             self.windex -= 1
-            self.windex = clamp_cord(self.windex, 0, self.num_widgets)
+            self.windex = clamp_cord(self.windex, 0, self.num_widgets - 1)
 
-        print("Current widget -> ", self.widgets[self.windex].wtype)
+        print("cwidget -> ", self.widgets[self.windex])
         return self.widgets[self.windex]
 
     def get_interactive_widget(
@@ -55,14 +62,14 @@ class BauriMicroGUI:
         if isinstance(cwidget, Button):
             cwidget.hover(self.canvas)
 
-        self.flush(self.flip_endianness)
+        self.flush()
 
     def action_prev(self) -> None:
         cwidget = self.get_current_widget(back=True)
         if isinstance(cwidget, Button):
             cwidget.hover(self.canvas)
 
-        self.flush(self.flip_endianness)
+        self.flush()
 
     def action_up(self) -> None:
         pass
@@ -76,7 +83,7 @@ class BauriMicroGUI:
             if cwidget.on_click is not None:
                 cwidget.on_click()
 
-        self.flush(self.flip_endianness)
+        self.flush()
 
     def bg(self, color: int) -> None:
         self.canvas.fill_display(color)
@@ -85,12 +92,11 @@ class BauriMicroGUI:
         self.num_widgets += 1
         self.widgets.append(widget)
 
-    def flush(self, flip_endianness: bool = False) -> None:
-        self.flip_endianness = flip_endianness
+    def flush(self) -> None:
 
         self.canvas.fill_display(self.flush_color)
 
         for widget in self.widgets:
             widget.draw(self.canvas)
 
-        self.canvas.show(flip_endianness)
+        self.canvas.show()

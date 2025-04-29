@@ -1,3 +1,6 @@
+import gc
+import machine
+import micropython
 import time
 from machine import Pin, SPI
 from baurimicrogui.drivers.display import BauriMicroDispDriver
@@ -10,6 +13,11 @@ ROT_270 = 0xA0
 COL_BGR = 0x08
 COL_RGB = 0x00
 
+@micropython.native
+def swap_end(row_buf : memoryview, buf : memoryview, size : int) -> None:
+    for i in range(0, size, 2):
+        row_buf[i] = buf[i+1]
+        row_buf[i+1] = buf[i]
 
 class BauriMicroST7735(BauriMicroDispDriver):
     dc_pin: Pin
@@ -72,6 +80,10 @@ class BauriMicroST7735(BauriMicroDispDriver):
         isok = self.setup(
             spi, p_dc, p_cs, p_reset, width, height, rotation, colormode
         )
+
+        self.rowbuf = bytearray(width * 2)
+        self.rowbuf_mv = memoryview(self.rowbuf)
+
         if not isok:
             print("Failed to Setup Display")
 
@@ -282,15 +294,31 @@ class BauriMicroST7735(BauriMicroDispDriver):
 
         return buf
 
-    def display(self, buffer: bytearray, flip_endianness: bool = False) -> None:
+    def display(self, buffer: memoryview) -> None:
         self.set_region(0, 0, self.width - 1, self.height - 1)
         self.dc(1)
         self.cs(0)
+        row_bts = self.width * 2
         # I am not sure if this issue specific to my display unit. But without
         # flipping endinanness. colors are all messed up.
         # Don't pass any argument if you see colors correctly without flipping.
-        if flip_endianness:
-            self.spi.write(self._get_swapped_buf(buffer))
-        else:
-            self.spi.write(buffer)
+        #s = machine.SoftSPI()
+
+        #self.spi.write(buffer)
+        for row in range(self.height):
+            r_start = row * row_bts
+            swap_end(self.rowbuf_mv, buffer[r_start : r_start + row_bts], row_bts)
+            self.spi.write(self.rowbuf_mv)
+
         self.cs(1)
+
+        #self.dc(0)
+        #self.cs(0)
+        #self.spi.write(bytearray([self.RAMWR]))
+        #self.dc(1)
+        #self.spi.write(buffer)
+        #for i in range(0, len(buffer), 2):
+        #    self.spi.write(bytearray([buffer[i+1],buffer[i]]))
+        #self.cs(1)
+
+

@@ -13,6 +13,9 @@ class BauriMicroWidget:
     def __init__(self) -> None:
         pass
 
+    def __str__(self) -> str:
+        return "Widget[Text=|Size=]"
+
     def get_calc_size(self) -> tuple[int, int]:
         """Return calculated Width and Height.
         Very Costly, without first drawing"""

@@ -100,6 +100,6 @@ class BauriMicroDispDriver:
         """Set Region for drawing"""
         pass
 
-    def display(self, buffer: bytearray, flip_endianness: bool = False) -> None:
+    def display(self, buffer: memoryview) -> None:
         """Display/Flush drawing data to the display"""
         pass

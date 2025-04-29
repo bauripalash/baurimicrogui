@@ -4,98 +4,82 @@ import time
 from machine import Pin, SPI
 from baurimicrogui.gui import BauriMicroGUI
 from baurimicrogui.drivers.display.st7735 import *
+from baurimicrogui.drivers.input.simple_joystick import SimpleJoyStick
 from baurimicrogui.colors import *
 from baurimicrogui.utils import *
-from baurimicrogui.widgets.button import Button
 from baurimicrogui.widgets.label import Label
+from baurimicrogui.widgets.button import Button
+import gc
+import micropython
 
 
-vl: int = 0
+class ProjectGreenZero:
+    display_spi: SPI
+    display_driver: BauriMicroST7735
+    jstick : SimpleJoyStick
+    ui: BauriMicroGUI
+
+    def __init__(self) -> None:
+        self.display_spi = SPI(
+            1,
+            baudrate=8000000,
+            polarity=0,
+            phase=0,
+            sck=Pin(18),
+            mosi=Pin(23),
+            miso=None,
+        )
+        self.display_driver = BauriMicroST7735(
+            spi=self.display_spi,
+            p_dc=32,
+            p_reset=None,
+            p_cs=5,
+            width=128,
+            height=160,
+            rotation=ROT_180,
+        )
+        gc.collect()
+        self.jstick = SimpleJoyStick(Pin(13),Pin(4))
+        self.ui = BauriMicroGUI(self.display_driver, 128, 160, ROT_180, COL_RGB)
+        self.ui.bg(COLOR_BLACK)
+        self.n = 0
+
+    def setup_jstick(self) -> None:
+        self.jstick.right_press_fn  = lambda:self.inp_next_cb()
+
+
+    def setup_gui(self) -> None:
+        self.def_pad = Offset(left=8,right=8,top=8,bottom=8)
+
+        self.head_lbl = Label("Green Mango", 20, 0, COLOR_GREEN, COLOR_BLACK, padding=self.def_pad)
+        self.p_btn = Button("[+]" , 20, 20 , COLOR_BLUE, COLOR_RED, padding=self.def_pad )
+
+        self.m_btn = Button("[-]" , 20, 60 , COLOR_BLUE, COLOR_RED, padding=self.def_pad )
+
+        self.ui.add_widget(self.head_lbl)
+        self.ui.add_widget(self.p_btn)
+        self.ui.add_widget(self.m_btn)
+
+    def inp_next_cb(self) -> None:
+        print("Next Clicked")
+        self.ui.action_next()
+        self.n += 1
+        self.head_lbl.set_text("clicked:{}".format(self.n))
+
+
+
+    def run(self) -> None:
+        self.ui.flush()
+
+        while True:
+            self.jstick.listen()
 
 
 def main():
-    global vl
-    # print("SPI init ->")
-    s = SPI(
-        1,
-        baudrate=8000000,
-        polarity=0,
-        phase=0,
-        sck=Pin(18),
-        mosi=Pin(23),
-        miso=None,
-    )
-    tft = BauriMicroST7735(
-        spi=s,
-        p_dc=32,
-        p_reset=None,
-        p_cs=5,
-        width=128,
-        height=160,
-        rotation=ROT_180,
-    )
-
-    ui = BauriMicroGUI(tft, 128, 160, ROT_180, COL_RGB)
-    ui.bg(COLOR_BLACK)
-    pad = Offset(left=8, right=8, top=8, bottom=8)
-
-    lbl = Label("clicked:", 20, 0, COLOR_GREEN, COLOR_BLACK, padding=pad)
-
-    btn_plus = Button(
-        "[+]",
-        20,
-        20,
-        COLOR_GREEN,
-        COLOR_RED,
-        padding=pad,
-    )
-
-    btn_size = btn_plus.get_calc_size()
-
-    l = "clicked:"
-    btn_minus = Button(
-        "[-]",
-        20 + btn_size[0] + 10,
-        20,
-        COLOR_GREEN,
-        COLOR_BLUE,
-        padding=pad,
-    )
-
-    def minus_click():
-        global vl
-        print("minus clicked")
-        vl -= 1
-        lbl.set_text(l + str(vl))
-
-    def plus_click():
-        global vl
-        print("plus clicked")
-        vl += 1
-        lbl.set_text(l + str(vl))
-
-    btn_plus.on_click = plus_click
-
-    btn_minus.on_click = minus_click
-
-    print("Plus Size -> ", btn_size)
-
-    ui.add_widget(lbl)
-
-    ui.add_widget(btn_plus)
-    ui.add_widget(btn_minus)
-
-    ui.flush(True)
-
-    for i in range(5):
-        for _ in range(len(ui.widgets)):
-            print("Simulating Next click")
-            ui.action_next()
-            # print("Simulating Select click")
-            ui.action_click()
-            time.sleep_ms(100)
-
-        ui.windex = -1
+    m = ProjectGreenZero()
+    m.setup_gui()
+    m.setup_jstick()
+    m.run()
 
 
 if __name__ == "__main__":

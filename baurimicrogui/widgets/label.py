@@ -57,6 +57,9 @@ class Label(BauriMicroWidget):
         else:
             self.border_color = self.bg
 
+    def __str__(self) -> str:
+        return "Label[Text={}|Size={},{}]".format(self.text, self.rect_width,self.rect_height)
+
     def set_text(self, text: str) -> None:
         self.text = text
         self.need_size_refresh = True

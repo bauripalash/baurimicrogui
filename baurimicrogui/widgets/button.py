@@ -48,6 +48,9 @@ class Button(BauriMicroWidget):
         )
         self.label._calc_size()
 
+    def __str__(self) -> str:
+        return "Button[Text={}|Size={},{}]".format(self.label.text, self.label.rect_width,self.label.rect_height)
+
     def set_text(self, text: str) -> None:
         self.label.set_text(text)
 
@@ -63,7 +66,7 @@ class Button(BauriMicroWidget):
         )
 
         # TODO: Better Solution?
-        canvas.show(True)
+        canvas.show()
 
     def get_calc_size(self) -> tuple[int, int]:
         return self.label.get_calc_size()

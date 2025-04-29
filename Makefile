@@ -16,6 +16,7 @@ rs:
 
 sync:
 	rshell --port /dev/ttyACM0 rsync --mirror baurimicrogui /pyboard/baurimicrogui
+	rshell --port /dev/ttyACM0 cp main.py /pyboard/
 
 run:
 	mpremote a0 run main.py
