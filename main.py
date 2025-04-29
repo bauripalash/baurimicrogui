@@ -45,7 +45,8 @@ class ProjectGreenZero:
         self.n = 0
 
     def setup_jstick(self) -> None:
-        self.jstick.right_press_fn  = lambda:self.inp_next_cb()
+        self.jstick.right_press_fn = lambda:self.inp_next_cb()
+        self.jstick.left_press_fn = lambda:self.inp_prev_cb()
 
 
     def setup_gui(self) -> None:
@@ -60,11 +61,21 @@ class ProjectGreenZero:
         self.ui.add_widget(self.p_btn)
         self.ui.add_widget(self.m_btn)
 
+    def update_label(self) -> None:
+        self.head_lbl.set_text("clicked:{}".format(self.n))
+    
     def inp_next_cb(self) -> None:
         print("Next Clicked")
         self.ui.action_next()
         self.n += 1
-        self.head_lbl.set_text("clicked:{}".format(self.n))
+        self.update_label()
+
+    def inp_prev_cb(self) -> None:
+        print("Prev Clicked")
+        self.ui.action_prev()
+        self.n -= 1
+        self.update_label()
+        
 
 
 
