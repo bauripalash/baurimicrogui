@@ -3,6 +3,11 @@ import machine
 import micropython
 from baurimicrogui.drivers.input import BauriMicroInputDriver
 
+try:
+    from typing import Optional, Callable
+except ImportError:
+    pass
+
 
 class SimpleJoyStick(BauriMicroInputDriver):
     x_center_pos: int = 0
@@ -20,19 +25,16 @@ class SimpleJoyStick(BauriMicroInputDriver):
     MaxVal = micropython.const(65535)
     sample_delay: int = 5
 
-    left_press_fn = None
-    left_release_fn = None
+    left_press_fn: Optional[Callable[[], None]] = None
+    left_release_fn: Optional[Callable[[], None]] = None
+    right_press_fn: Optional[Callable[[], None]] = None
+    right_release_fn: Optional[Callable[[], None]] = None
+    up_press_fn: Optional[Callable[[], None]] = None
+    up_release_fn: Optional[Callable[[], None]] = None
+    down_press_fn: Optional[Callable[[], None]] = None
+    down_release_fn: Optional[Callable[[], None]] = None
+    btn_press_fn: Optional[Callable[[], None]] = None
 
-    right_press_fn = None
-    right_release_fn = None
-
-    up_press_fn = None
-    up_release_fn = None
-
-    down_press_fn = None
-    down_release_fn = None
-
-    btn_press_fn = None
     S_IDLE = micropython.const(0)
     S_LEFT = micropython.const(1)
     S_RIGHT = micropython.const(2)
@@ -63,7 +65,9 @@ class SimpleJoyStick(BauriMicroInputDriver):
             self.has_btn = True
             if isinstance(btn_pin, int):
                 self.btn_pin = machine.Pin(
-                    btn_pin, machine.Pin.IN, machine.Pin.PULL_UP
+                    btn_pin,
+                    machine.Pin.IN,
+                    machine.Pin.PULL_UP,
                 )
             else:
                 self.btn_pin = btn_pin
@@ -191,10 +195,10 @@ class SimpleJoyStick(BauriMicroInputDriver):
 
         if self.current_state != self.prev_state:
             if self.prev_state != self.S_IDLE:
-                #print("RELEASED -> ", self.state_to_str(self.prev_state))
+                # print("RELEASED -> ", self.state_to_str(self.prev_state))
                 self._call_fn(self.prev_state, True)
             if self.current_state != self.S_IDLE:
-                #print("PRESSED -> ", self.state_to_str())
+                # print("PRESSED -> ", self.state_to_str())
                 self._call_fn(self.current_state, False)
         self.prev_state = self.current_state
 

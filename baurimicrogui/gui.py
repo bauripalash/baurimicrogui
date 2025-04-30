@@ -8,7 +8,6 @@ from baurimicrogui.widgets.button import Button
 import gc
 
 
-
 class BauriMicroGUI:
     canvas: BauriMicroCanvas
     screen_width: int
@@ -17,6 +16,7 @@ class BauriMicroGUI:
     flip_endianness: bool = False
     flush_color: int = COLOR_BLACK
     num_widgets: int = 0
+    loop_navigation: bool = False
 
     def __init__(
         self,
@@ -36,39 +36,45 @@ class BauriMicroGUI:
 
         self.widgets = []
         self.windex = -1
-        
 
-    def get_current_widget(
-        self, fwd: bool = False, back: bool = False
-    ) -> BauriMicroWidget:
-        if fwd:
-            self.windex += 1
-            self.windex = clamp_cord(self.windex, 0, self.num_widgets - 1)
-
-        if back:
-            self.windex -= 1
-            self.windex = clamp_cord(self.windex, 0, self.num_widgets - 1)
-
-        print("cwidget -> ", self.widgets[self.windex])
+    def cur_widget(self) -> BauriMicroWidget:
         return self.widgets[self.windex]
 
-    def get_interactive_widget(
-        self, fwd: bool = False, back: bool = False
-    ) -> BauriMicroWidget | None:
-        pass
+    def navigate_widgets(self, forward: bool = True) -> None:
+        if self.num_widgets == 0:
+            return
+        direction = 1 if forward else -1
+        n = self.windex + direction
+
+        if self.loop_navigation:
+            n %= self.num_widgets
+            while not n == self.num_widgets:
+                if self.widgets[n].is_interactive:
+                    self.windex = n
+                    break
+                n = (n + direction) % self.num_widgets
+
+        else:
+            while 0 <= n < self.num_widgets:
+                if self.widgets[n].is_interactive:
+                    self.windex = n
+                    break
+                n += direction
 
     def action_next(self) -> None:
-        cwidget = self.get_current_widget(fwd=True)
-        if isinstance(cwidget, Button):
-            cwidget.hover(self.canvas)
-
+        self.set_hover(self.cur_widget(), False)
+        self.navigate_widgets(True)
+        self.set_hover(self.cur_widget(), True)
         self.flush()
 
-    def action_prev(self) -> None:
-        cwidget = self.get_current_widget(back=True)
-        if isinstance(cwidget, Button):
-            cwidget.hover(self.canvas)
+    def set_hover(self, widget: BauriMicroWidget, enable: bool) -> None:
+        if isinstance(widget, Button):
+            widget.hover(enable)
 
+    def action_prev(self) -> None:
+        self.set_hover(self.cur_widget(), False)
+        self.navigate_widgets(False)
+        self.set_hover(self.cur_widget(), True)
         self.flush()
 
     def action_up(self) -> None:
@@ -78,7 +84,7 @@ class BauriMicroGUI:
         pass
 
     def action_click(self) -> None:
-        cwidget = self.get_current_widget(False)
+        cwidget = self.cur_widget()
         if isinstance(cwidget, Button):
             if cwidget.on_click is not None:
                 cwidget.on_click()

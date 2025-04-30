@@ -8,7 +8,6 @@ from baurimicrogui.colors import *
 class Button(BauriMicroWidget):
     canvas: BauriMicroCanvas | None = None
     first_draw: bool = True
-    is_interactive = True
     wtype = "button"
     label: Label
 
@@ -46,15 +45,24 @@ class Button(BauriMicroWidget):
             max_height,
             transparent,
         )
+        self.is_interactive = True
         self.label._calc_size()
 
     def __str__(self) -> str:
-        return "Button[Text={}|Size={},{}]".format(self.label.text, self.label.rect_width,self.label.rect_height)
+        return "Button[Text={}|Size={},{}]".format(
+            self.label.text, self.label.rect_width, self.label.rect_height
+        )
 
     def set_text(self, text: str) -> None:
         self.label.set_text(text)
 
-    def hover(self, canvas: BauriMicroCanvas) -> None:
+    def get_calc_size(self) -> tuple[int, int]:
+        return self.label.get_calc_size()
+
+    def hover(self, enable: bool = True) -> None:
+        self.enable_hover = enable
+
+    def draw_hover(self, canvas: BauriMicroCanvas) -> None:
         rect_width, rect_height = self.label.get_calc_size()
         canvas.draw_rect(
             self.label.pos_x,
@@ -66,11 +74,10 @@ class Button(BauriMicroWidget):
         )
 
         # TODO: Better Solution?
-        canvas.show()
-
-    def get_calc_size(self) -> tuple[int, int]:
-        return self.label.get_calc_size()
 
     def draw(self, canvas: BauriMicroCanvas) -> None:
         self.first_draw = False
         self.label.draw(canvas)
+
+        if self.enable_hover:
+            self.draw_hover(canvas)

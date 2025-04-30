@@ -1,9 +1,5 @@
-# bauri_st7735
-
-[![PyPI - Version](https://img.shields.io/pypi/v/bauri-st7735.svg)](https://pypi.org/project/bauri-st7735)
-[![PyPI - Python Version](https://img.shields.io/pypi/pyversions/bauri-st7735.svg)](https://pypi.org/project/bauri-st7735)
-
------
+# BauriMicroGUI
+Simple, Flexible GUI Library with Navigation for Micropython
 
 ## Table of Contents
 
@@ -11,11 +7,7 @@
 - [License](#license)
 
 ## Installation
-
-```console
-pip install bauri-st7735
-```
+Download the `baurimicrogui` directory, upload it to your board and use.
 
 ## License
-
-`bauri-st7735` is distributed under the terms of the [MIT](https://spdx.org/licenses/MIT.html) license.
+`BauriMicroGUI` is distributed under the terms of the [MIT](https://spdx.org/licenses/MIT.html) license.

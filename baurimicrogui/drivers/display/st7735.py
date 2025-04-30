@@ -13,11 +13,13 @@ ROT_270 = 0xA0
 COL_BGR = 0x08
 COL_RGB = 0x00
 
+
 @micropython.native
-def swap_end(row_buf : memoryview, buf : memoryview, size : int) -> None:
+def swap_end(row_buf: memoryview, buf: memoryview, size: int) -> None:
     for i in range(0, size, 2):
-        row_buf[i] = buf[i+1]
-        row_buf[i+1] = buf[i]
+        row_buf[i] = buf[i + 1]
+        row_buf[i + 1] = buf[i]
+
 
 class BauriMicroST7735(BauriMicroDispDriver):
     dc_pin: Pin
@@ -302,23 +304,23 @@ class BauriMicroST7735(BauriMicroDispDriver):
         # I am not sure if this issue specific to my display unit. But without
         # flipping endinanness. colors are all messed up.
         # Don't pass any argument if you see colors correctly without flipping.
-        #s = machine.SoftSPI()
+        # s = machine.SoftSPI()
 
-        #self.spi.write(buffer)
+        # self.spi.write(buffer)
         for row in range(self.height):
             r_start = row * row_bts
-            swap_end(self.rowbuf_mv, buffer[r_start : r_start + row_bts], row_bts)
+            swap_end(
+                self.rowbuf_mv, buffer[r_start : r_start + row_bts], row_bts
+            )
             self.spi.write(self.rowbuf_mv)
 
         self.cs(1)
 
-        #self.dc(0)
-        #self.cs(0)
-        #self.spi.write(bytearray([self.RAMWR]))
-        #self.dc(1)
-        #self.spi.write(buffer)
-        #for i in range(0, len(buffer), 2):
+        # self.dc(0)
+        # self.cs(0)
+        # self.spi.write(bytearray([self.RAMWR]))
+        # self.dc(1)
+        # self.spi.write(buffer)
+        # for i in range(0, len(buffer), 2):
         #    self.spi.write(bytearray([buffer[i+1],buffer[i]]))
-        #self.cs(1)
-
-
+        # self.cs(1)

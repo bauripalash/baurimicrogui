@@ -46,9 +46,11 @@ def clamp_cord(pos: int, smallest: int, biggest: int) -> int:
     else:
         return pos
 
-def flip_endian(n : int) -> int:
+
+def flip_endian(n: int) -> int:
     """Flip Endianness"""
     return ((n & 0xFF) << 8) | ((n >> 8) & 0xFF)
+
 
 class Offset:
     def __init__(

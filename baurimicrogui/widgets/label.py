@@ -2,6 +2,7 @@ from baurimicrogui.widgets import BauriMicroWidget
 from baurimicrogui.canvas import BauriMicroCanvas
 from baurimicrogui.utils import *
 from baurimicrogui.colors import *
+import micropython
 
 
 class Label(BauriMicroWidget):
@@ -14,7 +15,6 @@ class Label(BauriMicroWidget):
     need_size_refresh: bool = True
     first_draw: bool = True
     wtype = "label"
-    is_interactive = False
 
     def __init__(
         self,
@@ -57,13 +57,18 @@ class Label(BauriMicroWidget):
         else:
             self.border_color = self.bg
 
+        self.is_interactive = False
+
     def __str__(self) -> str:
-        return "Label[Text={}|Size={},{}]".format(self.text, self.rect_width,self.rect_height)
+        return "Label[Text={}|Size={},{}]".format(
+            self.text, self.rect_width, self.rect_height
+        )
 
     def set_text(self, text: str) -> None:
         self.text = text
         self.need_size_refresh = True
 
+    @micropython.native
     def _calc_size(self, char_width: int = 8, char_height: int = 8) -> None:
         """update (rect_width, rect_height, text_width, text_height)"""
         prelim_text_w = len(self.text) * char_width

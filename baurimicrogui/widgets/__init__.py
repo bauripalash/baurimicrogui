@@ -9,6 +9,7 @@ class BauriMicroWidget:
     first_draw: bool = True
     wtype: str = ""
     is_interactive: bool = False
+    enable_hover: bool = False
 
     def __init__(self) -> None:
         pass
@@ -21,8 +22,12 @@ class BauriMicroWidget:
         Very Costly, without first drawing"""
         return 0, 0
 
-    def hover(self, canvas: BauriMicroCanvas) -> None:
+    def hover(self, enable: bool = True) -> None:
         """On Hover"""
+        pass
+
+    def draw_hover(self, canvas: BauriMicroCanvas) -> None:
+        """Draw hovered state"""
         pass
 
     def draw(self, canvas: BauriMicroCanvas) -> None:
