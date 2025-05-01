@@ -11,6 +11,10 @@ class BauriMicroWidget:
     is_interactive: bool = False
     enable_hover: bool = False
 
+    has_on_click: bool = False
+    has_on_up: bool = False
+    hash_on_down: bool = False
+
     def __init__(self) -> None:
         pass
 
@@ -24,6 +28,18 @@ class BauriMicroWidget:
 
     def hover(self, enable: bool = True) -> None:
         """On Hover"""
+        pass
+
+    def on_click(self) -> None:
+        """On click"""
+        pass
+
+    def on_up(self) -> None:
+        """On Upwards"""
+        pass
+
+    def on_down(self) -> None:
+        """On Downwards"""
         pass
 
     def draw_hover(self, canvas: BauriMicroCanvas) -> None:

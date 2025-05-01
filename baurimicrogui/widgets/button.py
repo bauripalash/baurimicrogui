@@ -1,8 +1,13 @@
 from baurimicrogui.widgets import BauriMicroWidget
 from baurimicrogui.widgets.label import Label
 from baurimicrogui.canvas import BauriMicroCanvas
-from baurimicrogui.utils import *
-from baurimicrogui.colors import *
+from baurimicrogui.utils import Offset
+from baurimicrogui.colors import COLOR_WHITE
+
+try:
+    from typing import Callable, Optional
+except ImportError:
+    pass
 
 
 class Button(BauriMicroWidget):
@@ -10,6 +15,8 @@ class Button(BauriMicroWidget):
     first_draw: bool = True
     wtype = "button"
     label: Label
+    has_on_click = True
+    on_click_callback: Optional[Callable[[], None]]
 
     def __init__(
         self,
@@ -19,7 +26,7 @@ class Button(BauriMicroWidget):
         color: int,
         bg_color: int,
         border_color: int | None = None,
-        on_click=None,
+        on_click_callback=None,
         padding: Offset | None = None,
         overflow: bool = False,
         max_width: int = -1,
@@ -27,10 +34,10 @@ class Button(BauriMicroWidget):
         transparent: bool = False,
     ) -> None:
 
-        if on_click is not None:
-            self.on_click = on_click
+        if on_click_callback is not None:
+            self.on_click_callback = on_click_callback
         else:
-            self.on_click = None
+            self.on_click_callback = None
 
         self.label = Label(
             text,
@@ -58,6 +65,10 @@ class Button(BauriMicroWidget):
 
     def get_calc_size(self) -> tuple[int, int]:
         return self.label.get_calc_size()
+
+    def on_click(self) -> None:
+        if self.on_click_callback is not None:
+            self.on_click_callback()
 
     def hover(self, enable: bool = True) -> None:
         self.enable_hover = enable

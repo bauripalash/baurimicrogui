@@ -1,9 +1,9 @@
 from baurimicrogui.canvas import BauriMicroCanvas
-from baurimicrogui.colors import *
-from baurimicrogui.utils import clamp_cord
 from baurimicrogui.widgets import BauriMicroWidget
 from baurimicrogui.drivers.display import BauriMicroDispDriver
 from baurimicrogui.widgets.button import Button
+
+from baurimicrogui.colors import COLOR_BLACK
 
 import gc
 
@@ -78,16 +78,24 @@ class BauriMicroGUI:
         self.flush()
 
     def action_up(self) -> None:
-        pass
+        cwidget = self.cur_widget()
+        if cwidget.has_on_up:
+            cwidget.on_up()
+
+        self.flush()
 
     def action_down(self) -> None:
-        pass
+        cwidget = self.cur_widget()
+        if cwidget.hash_on_down:
+            cwidget.on_down()
+
+        self.flush()
 
     def action_click(self) -> None:
         cwidget = self.cur_widget()
-        if isinstance(cwidget, Button):
-            if cwidget.on_click is not None:
-                cwidget.on_click()
+
+        if cwidget.has_on_click:
+            cwidget.on_click()
 
         self.flush()
 

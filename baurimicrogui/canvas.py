@@ -1,5 +1,6 @@
 from baurimicrogui.drivers.display import BauriMicroDispDriver
-from baurimicrogui.utils import *
+from baurimicrogui.utils import clamp_cord
+from micropython import const
 import framebuf
 
 

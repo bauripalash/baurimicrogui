@@ -1,5 +1,4 @@
 import gc
-import machine
 import micropython
 import time
 from machine import Pin, SPI
@@ -82,6 +81,8 @@ class BauriMicroST7735(BauriMicroDispDriver):
         isok = self.setup(
             spi, p_dc, p_cs, p_reset, width, height, rotation, colormode
         )
+
+        gc.collect()
 
         self.rowbuf = bytearray(width * 2)
         self.rowbuf_mv = memoryview(self.rowbuf)

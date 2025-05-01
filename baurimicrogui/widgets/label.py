@@ -1,7 +1,6 @@
 from baurimicrogui.widgets import BauriMicroWidget
 from baurimicrogui.canvas import BauriMicroCanvas
-from baurimicrogui.utils import *
-from baurimicrogui.colors import *
+from baurimicrogui.utils import Offset, get_text_size
 import micropython
 
 

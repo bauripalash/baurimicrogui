@@ -1,6 +1,5 @@
 """Simple and Minimal Micropython Driver for ST7735 Displays"""
 
-import time
 from machine import Pin, SPI
 from baurimicrogui.gui import BauriMicroGUI
 from baurimicrogui.drivers.display.st7735 import *
