@@ -1,3 +1,12 @@
+def wrap_list_by_maxchar(lines: list[str], max_chars: int) -> list[str]:
+    wl: list[str] = []
+
+    for line in lines:
+        for i in range(0, len(line), max_chars):
+            wl.append(line[i : i + max_chars])
+    return wl
+
+
 def get_text_size(
     text: str,
     pos_x: int = 0,

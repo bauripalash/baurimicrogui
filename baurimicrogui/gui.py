@@ -68,8 +68,7 @@ class BauriMicroGUI:
         self.flush()
 
     def set_hover(self, widget: BauriMicroWidget, enable: bool) -> None:
-        if isinstance(widget, Button):
-            widget.hover(enable)
+        widget.hover(enable)
 
     def action_prev(self) -> None:
         self.set_hover(self.cur_widget(), False)

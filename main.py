@@ -8,6 +8,7 @@ from baurimicrogui.colors import *
 from baurimicrogui.utils import *
 from baurimicrogui.widgets.label import Label
 from baurimicrogui.widgets.button import Button
+from baurimicrogui.widgets.textbox import Textbox
 import gc
 
 
@@ -16,6 +17,7 @@ class ProjectGreenZero:
     display_driver: BauriMicroST7735
     jstick: SimpleJoyStick
     ui: BauriMicroGUI
+    found_nws: list
 
     def __init__(self) -> None:
         self.display_spi = SPI(
@@ -47,6 +49,8 @@ class ProjectGreenZero:
         self.jstick.right_press_fn = lambda: self.inp_next_cb()
         self.jstick.left_press_fn = lambda: self.inp_prev_cb()
         self.jstick.btn_press_fn = lambda: self.inp_sel_cb()
+        self.jstick.up_press_fn = lambda: self.inp_up_cb()
+        self.jstick.down_press_fn = lambda: self.inp_down_cb()
 
     def setup_gui(self) -> None:
         self.def_pad = Offset(left=8, right=8, top=8, bottom=8)
@@ -57,6 +61,22 @@ class ProjectGreenZero:
         self.p_btn = Button("[+]", 20, 20, COLOR_BLUE, COLOR_RED, padding=self.def_pad)
 
         self.m_btn = Button("[-]", 20, 60, COLOR_BLUE, COLOR_RED, padding=self.def_pad)
+        m_w, m_h = self.m_btn.get_calc_size()
+
+        self.tb = Textbox()
+        tb_y = self.m_btn.pos_y + m_h + 10
+        isok = self.tb.setup(
+            0,
+            tb_y,
+            COLOR_BLACK,
+            COLOR_YELLOW,
+            width=self.ui.screen_width,
+            height=self.ui.screen_height - tb_y,
+            padding=self.def_pad,
+        )
+
+        if not isok:
+            print("Textbox setup failed!")
 
         self.p_btn.on_click = lambda: self.plus_btn_click()
         self.m_btn.on_click = lambda: self.minus_btn_click()
@@ -64,6 +84,7 @@ class ProjectGreenZero:
         self.ui.add_widget(self.head_lbl)
         self.ui.add_widget(self.p_btn)
         self.ui.add_widget(self.m_btn)
+        self.ui.add_widget(self.tb)
 
     def plus_btn_click(self) -> None:
         self.n += 1
@@ -82,8 +103,16 @@ class ProjectGreenZero:
     def inp_prev_cb(self) -> None:
         self.ui.action_prev()
 
+    def inp_up_cb(self) -> None:
+        self.ui.action_up()
+
+    def inp_down_cb(self) -> None:
+        self.ui.action_down()
+
     def inp_sel_cb(self) -> None:
         self.ui.action_click()
+        self.tb.print("Hello World!!!: <{}>".format(self.n))
+        self.ui.flush()
 
     def run(self) -> None:
         self.ui.flush()

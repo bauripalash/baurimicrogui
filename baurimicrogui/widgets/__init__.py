@@ -28,7 +28,7 @@ class BauriMicroWidget:
 
     def hover(self, enable: bool = True) -> None:
         """On Hover"""
-        pass
+        self.enable_hover = enable
 
     def on_click(self) -> None:
         """On click"""

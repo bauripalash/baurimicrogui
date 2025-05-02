@@ -32,8 +32,12 @@ class Button(BauriMicroWidget):
         max_width: int = -1,
         max_height: int = -1,
         transparent: bool = False,
+        hover_thickness: int = 1,
+        hover_color: int = COLOR_WHITE,
     ) -> None:
 
+        self.pos_x = pos_x
+        self.pos_y = pos_y
         if on_click_callback is not None:
             self.on_click_callback = on_click_callback
         else:
@@ -53,25 +57,35 @@ class Button(BauriMicroWidget):
             transparent,
         )
         self.is_interactive = True
+        self.hover_thickness = hover_thickness
+        self.hover_color = hover_color
         self.label._calc_size()
+        self.sync_w_h()
 
     def __str__(self) -> str:
         return "Button[Text={}|Size={},{}]".format(
             self.label.text, self.label.rect_width, self.label.rect_height
         )
 
+    def sync_w_h(self) -> None:
+        self.width = self.label.width
+        self.height = self.label.height
+
     def set_text(self, text: str) -> None:
         self.label.set_text(text)
+        self.sync_w_h()
 
     def get_calc_size(self) -> tuple[int, int]:
-        return self.label.get_calc_size()
+        w, h = self.label.get_calc_size()
+        self.sync_w_h()
+        return w, h
 
     def on_click(self) -> None:
         if self.on_click_callback is not None:
             self.on_click_callback()
 
     def hover(self, enable: bool = True) -> None:
-        self.enable_hover = enable
+        return super().hover(enable)
 
     def draw_hover(self, canvas: BauriMicroCanvas) -> None:
         rect_width, rect_height = self.label.get_calc_size()
@@ -80,8 +94,8 @@ class Button(BauriMicroWidget):
             self.label.pos_y,
             rect_width,
             rect_height,
-            thickness=2,
-            color=COLOR_WHITE,
+            thickness=self.hover_thickness,
+            color=self.hover_color,
         )
 
         # TODO: Better Solution?
