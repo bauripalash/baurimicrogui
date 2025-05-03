@@ -68,11 +68,13 @@ class ProjectGreenZero:
         isok = self.tb.setup(
             0,
             tb_y,
+            COLOR_GREEN,
             COLOR_BLACK,
-            COLOR_YELLOW,
+            border=COLOR_RED,
             width=self.ui.screen_width,
             height=self.ui.screen_height - tb_y,
             padding=self.def_pad,
+            scroll=True,
         )
 
         if not isok:
