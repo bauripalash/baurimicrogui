@@ -1,4 +1,5 @@
 import gc
+import micropython
 from baurimicrogui import utils
 from baurimicrogui.colors import COLOR_GREEN, COLOR_RED, COLOR_WHITE
 from baurimicrogui.widgets import BauriMicroWidget
@@ -27,6 +28,7 @@ class Textbox(BauriMicroWidget):
     wtype: str
     is_interactive: bool
 
+    @micropython.native
     def setup(
         self,
         pos_x: int,
@@ -149,6 +151,7 @@ class Textbox(BauriMicroWidget):
     def on_down(self) -> None:
         self.scroll_down()
 
+    @micropython.native
     def draw_lines(self, canvas: BauriMicroCanvas) -> None:
         total_lines = len(self.lines)
         for i in range(self.visible_lines):
@@ -164,7 +167,9 @@ class Textbox(BauriMicroWidget):
             else:
                 break
 
+    @micropython.native
     def draw_scrollbar(self, canvas: BauriMicroCanvas) -> None:
+        """draw scrollbar"""
         sbar_width = self.scroll_width
         sbar_x = self.pos_x + self.width - sbar_width
         sbar_y = self.pos_y
@@ -193,6 +198,7 @@ class Textbox(BauriMicroWidget):
             )
 
     def draw(self, canvas: BauriMicroCanvas) -> None:
+
         self.canvas = canvas
         self.first_draw = False
 

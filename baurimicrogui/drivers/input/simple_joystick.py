@@ -72,16 +72,17 @@ class SimpleJoyStick(BauriMicroInputDriver):
             else:
                 self.btn_pin = btn_pin
 
-        self.xa.width(machine.ADC.WIDTH_12BIT)
-        self.ya.width(machine.ADC.WIDTH_12BIT)
 
-        self.xa.atten(machine.ADC.ATTN_11DB)
-        self.ya.atten(machine.ADC.ATTN_11DB)
         self.threashold = threashold
 
         self.calibrate()
 
     def calibrate(self) -> None:
+        self.xa.width(machine.ADC.WIDTH_12BIT)
+        self.ya.width(machine.ADC.WIDTH_12BIT)
+
+        self.xa.atten(machine.ADC.ATTN_11DB)
+        self.ya.atten(machine.ADC.ATTN_11DB)
         print("[+] joystick calibration started")
 
         total_x = 0
